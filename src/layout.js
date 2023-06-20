@@ -1,89 +1,88 @@
 import {Container, ListGroup, ListGroupItem, Button, Row, Col, Navbar, Nav, Form, FormGroup} from "react-bootstrap";
 import Progress from "./progress";
-import React, {useState} from "react";
-
+import React, { useState} from "react";
 import { FaTrash, FaImage, FaVideo } from 'react-icons/fa';
 import axios from "axios";
 
-
+//TODO: split this huge component into multiple components
 export default function Layout(){
-    const [videos, setVideos] = useState([]);
+    const classes={
+        fileListItem:"p-3 mb-2 bg-light-subtle rounded",
+        fileListItemSelected:"p-3 mb-2 bg-secondary-subtle rounded",
+    }
     const [videoObjects, setVideoObjects] = useState([]);
     const [imageObjects, setImageObjects] = useState([]);
+    let [imageID,setImageID]=useState(0);
+    let [videoID,setVideoID]=useState(0);
     const [running, setRunning]=useState(false);
+    const [selectedVideo, setSelectedVideo] = useState([-1,null]);
     const handleVideoChange = (event) => {
         const files = event.target.files;
-        const newVideos = [];
-        setVideoObjects([...videoObjects,...event.target.files]);
+        const newFiles=[];
+        for (let i=0; i<videoObjects.length;i++){
+            newFiles.push(videoObjects[i])
+        }
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            const reader = new FileReader();
-
-            reader.onload = () => {
-                const videoUrl = reader.result;
-                const video = document.createElement('video');
-                video.addEventListener('loadeddata', () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-                    const previewUrl = canvas.toDataURL();
-                    newVideos.push({ videoUrl, previewUrl });
-                    if (newVideos.length === files.length) {
-                        setVideos([...videos, ...newVideos]);
-                    }
-                });
-                video.src = videoUrl;
-                video.load();
-            };
-
-            reader.readAsDataURL(file);
+            newFiles.push([videoID,file]);
         }
+        setVideoID(videoID+files.length);
+        console.log(newFiles)
+        setVideoObjects(newFiles);
     };
     const handleVideoDelete = (index) => {
-        const newVideos = [...videos];
-        newVideos.splice(index, 1);
-        setVideoObjects(videoObjects.splice(index,1));
-        setVideos(newVideos);
+        console.log(`Expecting to delete video with index ${index}`)
+        const newState=[]
+        for (let i = 0; i < videoObjects.length; i++) {
+            const [id,file] = videoObjects[i];
+            if(id===index){
+                console.log(`Deleting ${videoObjects[i]}`)
+                continue
+            }
+            newState.push([id,file]);
+        }
+        setVideoObjects(newState)
     };
     const handleImageChange = (event) => {
 
 
-        // for (let i = 0; i < files.length; i++) {
-        //     const file = files[i];
-        //     const reader = new FileReader();
-        //     reader.onload = () => {
-        //         const imageUrl = reader.result;
-        //         newImages.push({ imageUrl });
-        //         if (newImages.length === files.length) {
-        //             setImages([...images, ...newImages]);
-        //         }
-        //     };
-        //
-        //     reader.readAsDataURL(file);
-        // }
-        setImageObjects([...imageObjects,...event.target.files])
-    };
-    //TODO: delete indexing
-    const handleImageDelete = (index) => {
-        //const newImages = [...images];
-        //newImages.splice(index, 1);
-        console.log("Before:")
+        const files = event.target.files;
+        const newFiles=[]
+        for (let i = 0; i < imageObjects.length; i++) {
+            newFiles.push(imageObjects[i]);
+
+        }
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            newFiles.push([imageID+i,file]);
+
+        }
+        setImageID(imageID+files.length)
         console.log(imageObjects)
-        const deleted=imageObjects.splice(index,1)
-        console.log("After:")
-        console.log(deleted)
-        setImageObjects(deleted);
-        //setImages(newImages);
+        setImageObjects(newFiles);
+
+    };
+    const handleImageDelete = (idToDelete) => {
+        console.log("Before delete:")
+        console.log(imageObjects)
+        const newState=[]
+        for (let i = 0; i < imageObjects.length; i++) {
+            const [id,file] = imageObjects[i];
+            if(id===idToDelete){
+                continue
+            }
+            newState.push([id,file]);
+        }
+        setImageObjects(newState)
     };
     const handleUploadClick = () => {
         const formData = new FormData();
-        imageObjects.forEach((image, index) => {
+        imageObjects.forEach(([id,image], index) => {
             console.log(`Uploading image ${image.name}`)
             console.log(image)
             formData.append(`image${index}`,image,image.name);
         });
-        videoObjects.forEach((video, index) => {
+        videoObjects.forEach(([id,video], index) => {
             console.log(`Uploading video ${video.name}`)
             console.log(video)
             formData.append(`video${index}`,video,video.name);
@@ -105,13 +104,18 @@ export default function Layout(){
                 setRunning(false);
             });
     };
+
+    const handleVideoSelect = (e,id,video) => {
+        setSelectedVideo([id,video]);
+    };
+
     return (
         <>
             <Navbar bg="primary" variant="dark"  className="p-3">
                 <Navbar.Brand style={{fontSize:"2rem"}}>Lost and Found</Navbar.Brand>
             </Navbar>
         <Row className={"gx-2"}>
-            <Col xs={4}>
+            <Col xs={3}>
                 <Container className={ "bg-light rounded m-3 p-2"}>
                     <p style={{fontSize: "1.2rem"}}>
                         Welcome to our project that utilizes YOLO v5 for lost and found at airports. Losing personal belongings while traveling can be a frustrating experience.
@@ -133,10 +137,10 @@ export default function Layout(){
                     <Container className={ "my-2"}>
                         {imageObjects.length > 0 && (
                             <Col>
-                                {imageObjects.map((imageObj, index) => (
+                                {imageObjects.map(([iid,imageObj]) => (
 
-                                        <Container className={"p-3 mb-2 bg-light-subtle rounded"}>
-                                            <Row key={index} className={'gx-0'}>
+                                        <Container className={ classes.fileListItem} >
+                                            <Row key={iid} className={'gx-0'}>
                                             <Col xs={1}>
                                                 <Container >
                                                     <FaImage height={'25px'}></FaImage>
@@ -150,7 +154,7 @@ export default function Layout(){
 
                                             <Col xs={1}>
 
-                                                    <Button onClick={() => handleImageDelete(index)}>
+                                                    <Button onClick={() => handleImageDelete(iid)}>
                                                         <FaTrash></FaTrash>
                                                     </Button>
 
@@ -180,10 +184,11 @@ export default function Layout(){
                     <Container className={ "my-2"}>
                         {videoObjects.length > 0 && (
                             <Col>
-                                {videoObjects.map((videoObj, index) => (
-
-                                    <Container className={"p-3 mb-2 bg-light-subtle rounded"}>
-                                        <Row key={index} className={'gx-0'}>
+                                {videoObjects.map(([vid,videoObj], index) => (
+                                    //TODO: urgent: indexing is wrong when deleted
+                                    // we should use a map instead
+                                    <Container key={vid} className={vid===selectedVideo[0]?classes.fileListItemSelected:classes.fileListItem} >
+                                        <Row  className={'gx-0'} onClick={(e) => handleVideoSelect(e,vid,videoObj)}>
                                             <Col xs={1}>
                                                 <Container >
                                                     <FaVideo height={'25px'}></FaVideo>
@@ -192,12 +197,11 @@ export default function Layout(){
                                             </Col>
                                             <Col xs={10} >
                                                 <h5>{videoObj.name}</h5>
-
                                             </Col>
 
                                             <Col xs={1}>
 
-                                                <Button onClick={() => handleVideoDelete(index)}>
+                                                <Button onClick={() => handleVideoDelete(vid)}>
                                                     <FaTrash></FaTrash>
                                                 </Button>
 
@@ -214,10 +218,15 @@ export default function Layout(){
                     </Container>
                 </Container>
             </Col>
-            <Col xs={4}>
+            <Col xs={6}>
                 <Container className={'rounded m-3 p-4'}>
-                    <Container className={'bg-light m-2 '} style={{ minHeight:"50vh"}}>
-                        Video Player
+                    <Container className={'m-2 '} style={{ minHeight:"50vh"}}>
+                        {/*TODO: video does not rerender after selectedVideo Changes! It cannot play some encoding properly*/}
+                        {selectedVideo[1] && (
+                            <video controls width={"100%"} >
+                                <source src={URL.createObjectURL(selectedVideo[1])} type="video/mp4" />
+                            </video>
+                        )}
                     </Container>
                     <Container className={'bg-light m-2'} style={{ minHeight:"20vh"}}>
                         Airport Floor Plan
@@ -225,7 +234,7 @@ export default function Layout(){
                 </Container>
 
             </Col>
-            <Col xs={4}>
+            <Col xs={3}>
                 <Container className={'rounded m-3 p-4 bg-light'}>
                     <Container className={'rounded m-2 p-2 '}>
                         <Row >
