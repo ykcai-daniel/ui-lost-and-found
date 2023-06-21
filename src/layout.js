@@ -6,9 +6,11 @@ import axios from "axios";
 
 //TODO: split this huge component into multiple components
 export default function Layout(){
+    //bootstrap formats
     const classes={
-        fileListItem:"p-3 mb-2 bg-light-subtle rounded",
-        fileListItemSelected:"p-3 mb-2 bg-secondary-subtle rounded",
+        fileListItem:" bg-light-subtle rounded",
+        fileListItemSelected:"bg-secondary-subtle rounded",
+        blockContainer:"bg-light rounded",
     }
     const [videoObjects, setVideoObjects] = useState([]);
     const [imageObjects, setImageObjects] = useState([]);
@@ -111,22 +113,15 @@ export default function Layout(){
 
     return (
         <>
-            <Navbar bg="primary" variant="dark"  className="p-3">
+            <Navbar bg="primary" variant="dark"  className="p-2">
                 <Navbar.Brand style={{fontSize:"2rem"}}>Lost and Found</Navbar.Brand>
             </Navbar>
-        <Row className={"gx-2"}>
-            <Col xs={3}>
-                <Container className={ "bg-light rounded m-3 p-2"}>
-                    <p style={{fontSize: "1.2rem"}}>
-                        Welcome to our project that utilizes YOLO v5 for lost and found at airports. Losing personal belongings while traveling can be a frustrating experience.
-                        Our project aims to streamline this process by using YOLO v5, a state-of-the-art object detection algorithm,
-                        to quickly and accurately identify lost items in airports.
-                    </p>
-                </Container>
-                <Container className={ "bg-light rounded m-3 p-3"}>
-                    <Container className={ "p-3"}>
+        <Row >
+            <Col xs={4}>
+                <Container className={ classes.blockContainer}>
+                    <Container >
                         <Row>
-                            <Form.Group controlId="formFile" className="mb-3">
+                            <Form.Group controlId="formFile" >
                                 <Form.Label><h3>Upload Images</h3></Form.Label>
                                 <Form.Control disabled={running} type="file" multiple  variant="primary"  onChange={handleImageChange} />
                             </Form.Group>
@@ -134,7 +129,7 @@ export default function Layout(){
                         </Row>
 
                     </Container>
-                    <Container className={ "my-2"}>
+                    <Container className={classes.blockContainer} >
                         {imageObjects.length > 0 && (
                             <Col>
                                 {imageObjects.map(([iid,imageObj]) => (
@@ -170,7 +165,7 @@ export default function Layout(){
 
                     </Container>
                 </Container>
-                <Container className={ "bg-light rounded m-3 p-3"}>
+                <Container className={classes.blockContainer}>
                     <Container className={ "p-3"}>
                         <Row>
                             <Form.Group controlId="formFile" className="mb-3">
@@ -218,25 +213,25 @@ export default function Layout(){
                     </Container>
                 </Container>
             </Col>
-            <Col xs={6}>
-                <Container className={'rounded m-3 p-4'}>
-                    <Container className={'m-2 '} style={{ minHeight:"50vh"}}>
-                        {/*TODO: video does not rerender after selectedVideo Changes! It cannot play some encoding properly*/}
+            <Col xs={5}>
+                <Container className={classes.blockContainer}>
+                    <Container  style={{ minHeight:"50vh"}}>
+                        {/*Must have key element in video: https://stackoverflow.com/questions/23192565/video-embedded-into-html-doesnt-play*/}
                         {selectedVideo[1] && (
-                            <video controls width={"100%"} >
-                                <source src={URL.createObjectURL(selectedVideo[1])} type="video/mp4" />
+                            <video controls key={selectedVideo[0]} width={"100%"} >
+                                <source src={URL.createObjectURL(selectedVideo[1])} />
                             </video>
                         )}
                     </Container>
-                    <Container className={'bg-light m-2'} style={{ minHeight:"20vh"}}>
+                    <Container className={classes.blockContainer} style={{ minHeight:"20vh"}}>
                         Airport Floor Plan
                     </Container>
                 </Container>
 
             </Col>
             <Col xs={3}>
-                <Container className={'rounded m-3 p-4 bg-light'}>
-                    <Container className={'rounded m-2 p-2 '}>
+                <Container className={classes.blockContainer}>
+                    <Container >
                         <Row >
                             <Col xs={9}><Button className={"btn btn-success "} style={{width:'100%',height:"10vh"}} onClick={handleUploadClick} disabled={running}><h2>Launch</h2></Button></Col>
                             <Col xs={3}><Button className={"btn btn-danger "} style={{width:'100%',height:"10vh"}} disabled={!running}><h4>Cancel</h4></Button></Col>
@@ -245,13 +240,13 @@ export default function Layout(){
                     <Container>
                         <Progress url={'http://localhost:5000/progress'}>
                         </Progress>
-                        <Container className={ "bg-light rounded m-1 p-4"}>
-                            <Container className={ "m-2 p-1"}>
+                        <Container className={classes.blockContainer}>
+                            <Container >
                                 <h3>Configurations</h3>
                             </Container>
-                            <Container className={ "p-1"}>
+                            <Container >
                                 <Form>
-                                    <Form.Group as={Row} className="mb-1" controlId="formPlaintextEmail">
+                                    <Form.Group as={Row}  controlId="formPlaintextEmail">
                                         <Form.Label column >
                                             Lost Item Category
                                         </Form.Label>
@@ -260,11 +255,11 @@ export default function Layout(){
                                 </Form>
                             </Container>
                         </Container>
-                        <Container className={ "bg-light rounded m-2 p-4"}>
-                            <Container className={ "p-1"}>
+                        <Container className={ classes.blockContainer}>
+                            <Container >
                                 <h3>Results</h3>
                             </Container>
-                            <Container className={ "p-1"}>
+                            <Container >
                                 <ListGroup>
                                     <ListGroupItem>
                                         Video 0: 0:31-0:36

@@ -4,7 +4,6 @@ import reportWebVitals from './reportWebVitals';
 import Layout from "./layout";
 
 import 'bootstrap/dist/css/bootstrap.min.css';
-import VideoPlayer from "./videoPlayer";
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
