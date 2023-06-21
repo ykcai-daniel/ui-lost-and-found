@@ -8,9 +8,9 @@ import axios from "axios";
 export default function Layout(){
     //bootstrap formats
     const classes={
-        fileListItem:" bg-light-subtle rounded",
-        fileListItemSelected:"bg-secondary-subtle rounded",
-        blockContainer:"bg-light rounded",
+        fileListItem:" bg-light-subtle rounded mt-1",
+        fileListItemSelected:"bg-secondary-subtle rounded mt-1 p-1",
+        blockContainer:"bg-light rounded mt-1 p-1",
     }
     const [videoObjects, setVideoObjects] = useState([]);
     const [imageObjects, setImageObjects] = useState([]);
@@ -20,6 +20,7 @@ export default function Layout(){
     const [selectedVideo, setSelectedVideo] = useState([-1,null]);
     const handleVideoChange = (event) => {
         const files = event.target.files;
+        console.log(event);
         const newFiles=[];
         for (let i=0; i<videoObjects.length;i++){
             newFiles.push(videoObjects[i])
@@ -29,7 +30,7 @@ export default function Layout(){
             newFiles.push([videoID,file]);
         }
         setVideoID(videoID+files.length);
-        console.log(newFiles)
+
         setVideoObjects(newFiles);
     };
     const handleVideoDelete = (index) => {
@@ -75,6 +76,7 @@ export default function Layout(){
             }
             newState.push([id,file]);
         }
+
         setImageObjects(newState)
     };
     const handleUploadClick = () => {
@@ -116,13 +118,13 @@ export default function Layout(){
             <Navbar bg="primary" variant="dark"  className="p-2">
                 <Navbar.Brand style={{fontSize:"2rem"}}>Lost and Found</Navbar.Brand>
             </Navbar>
-        <Row >
-            <Col xs={4}>
+        <Row  >
+            <Col xs={3}>
                 <Container className={ classes.blockContainer}>
                     <Container >
                         <Row>
                             <Form.Group controlId="formFile" >
-                                <Form.Label><h3>Upload Images</h3></Form.Label>
+                                <Form.Label><h4>Upload Images</h4></Form.Label>
                                 <Form.Control disabled={running} type="file" multiple  variant="primary"  onChange={handleImageChange} />
                             </Form.Group>
 
@@ -135,24 +137,21 @@ export default function Layout(){
                                 {imageObjects.map(([iid,imageObj]) => (
 
                                         <Container className={ classes.fileListItem} >
-                                            <Row key={iid} className={'gx-0'}>
+                                            <Row key={iid}>
                                             <Col xs={1}>
-                                                <Container >
+
                                                     <FaImage height={'25px'}></FaImage>
-                                                </Container>
+
 
                                             </Col>
-                                            <Col xs={10} >
-                                                <h5>{imageObj.name}</h5>
-
+                                            <Col xs={8} >
+                                                {imageObj.name}
                                             </Col>
 
-                                            <Col xs={1}>
-
+                                            <Col xs={2}>
                                                     <Button onClick={() => handleImageDelete(iid)}>
-                                                        <FaTrash></FaTrash>
+                                                        <FaTrash ></FaTrash>
                                                     </Button>
-
                                             </Col>
                                             </Row>
                                         </Container>
@@ -166,37 +165,36 @@ export default function Layout(){
                     </Container>
                 </Container>
                 <Container className={classes.blockContainer}>
-                    <Container className={ "p-3"}>
+
+                    <Container >
                         <Row>
                             <Form.Group controlId="formFile" className="mb-3">
-                                <Form.Label><h3>Upload Videos</h3></Form.Label>
+                                <Form.Label><h4>Upload Videos</h4></Form.Label>
                                 <Form.Control type="file" multiple  variant="primary"  onChange={handleVideoChange} disabled={running} />
                             </Form.Group>
 
                         </Row>
 
                     </Container>
-                    <Container className={ "my-2"}>
+                    <Container>
                         {videoObjects.length > 0 && (
                             <Col>
                                 {videoObjects.map(([vid,videoObj], index) => (
                                     //TODO: urgent: indexing is wrong when deleted
                                     // we should use a map instead
                                     <Container key={vid} className={vid===selectedVideo[0]?classes.fileListItemSelected:classes.fileListItem} >
-                                        <Row  className={'gx-0'} onClick={(e) => handleVideoSelect(e,vid,videoObj)}>
+                                        <Row  onClick={(e) => handleVideoSelect(e,vid,videoObj)}>
                                             <Col xs={1}>
-                                                <Container >
                                                     <FaVideo height={'25px'}></FaVideo>
-                                                </Container>
 
                                             </Col>
-                                            <Col xs={10} >
-                                                <h5>{videoObj.name}</h5>
+                                            <Col xs={8} >
+                                                {videoObj.name}
                                             </Col>
 
-                                            <Col xs={1}>
+                                            <Col xs={2}>
 
-                                                <Button onClick={() => handleVideoDelete(vid)}>
+                                                <Button  onClick={() => handleVideoDelete(vid)} >
                                                     <FaTrash></FaTrash>
                                                 </Button>
 
@@ -215,6 +213,7 @@ export default function Layout(){
             </Col>
             <Col xs={5}>
                 <Container className={classes.blockContainer}>
+                    <h4>Video Player</h4>
                     <Container  style={{ minHeight:"50vh"}}>
                         {/*Must have key element in video: https://stackoverflow.com/questions/23192565/video-embedded-into-html-doesnt-play*/}
                         {selectedVideo[1] && (
@@ -223,59 +222,60 @@ export default function Layout(){
                             </video>
                         )}
                     </Container>
-                    <Container className={classes.blockContainer} style={{ minHeight:"20vh"}}>
-                        Airport Floor Plan
-                    </Container>
+
+                </Container>
+                <Container className={classes.blockContainer} style={{ minHeight:"20vh"}}>
+                    Airport Floor Plan
                 </Container>
 
             </Col>
             <Col xs={3}>
-                <Container className={classes.blockContainer}>
-                    <Container >
-                        <Row >
-                            <Col xs={9}><Button className={"btn btn-success "} style={{width:'100%',height:"10vh"}} onClick={handleUploadClick} disabled={running}><h2>Launch</h2></Button></Col>
-                            <Col xs={3}><Button className={"btn btn-danger "} style={{width:'100%',height:"10vh"}} disabled={!running}><h4>Cancel</h4></Button></Col>
+
+                    <Container className={classes.blockContainer} >
+                        <Row className={'gx-1'}>
+                            <Col xs={7}><Button className={"btn btn-success "} style={{width:'100%',height:"10vh"}} onClick={handleUploadClick} disabled={running}>Launch</Button></Col>
+                            <Col xs={5}><Button className={"btn btn-danger "} style={{width:'100%',height:"10vh"}} disabled={!running}>Cancel</Button></Col>
                         </Row>
                     </Container>
-                    <Container>
+                    <Container className={classes.blockContainer}>
                         <Progress url={'http://localhost:5000/progress'}>
                         </Progress>
-                        <Container className={classes.blockContainer}>
-                            <Container >
-                                <h3>Configurations</h3>
-                            </Container>
-                            <Container >
-                                <Form>
-                                    <Form.Group as={Row}  controlId="formPlaintextEmail">
-                                        <Form.Label column >
-                                            Lost Item Category
-                                        </Form.Label>
-                                            <Form.Control  defaultValue="suitcase" />
-                                    </Form.Group>
-                                </Form>
-                            </Container>
-                        </Container>
-                        <Container className={ classes.blockContainer}>
-                            <Container >
-                                <h3>Results</h3>
-                            </Container>
-                            <Container >
-                                <ListGroup>
-                                    <ListGroupItem>
-                                        Video 0: 0:31-0:36
-                                    </ListGroupItem>
-                                    <ListGroupItem>
-                                        Video 1: 3:22-3:27
-                                    </ListGroupItem>
-                                    <ListGroupItem>
-                                        Video 2: 4:52-4:57
-                                    </ListGroupItem>
-                                </ListGroup>
 
-                            </Container>
+                    </Container>
+                    <Container className={classes.blockContainer}>
+                        <Container >
+                            <h3>Configurations</h3>
+                        </Container>
+                        <Container >
+                            <Form>
+                                <Form.Group as={Row}  controlId="formPlaintextEmail">
+                                    <Form.Label column >
+                                        Lost Item Category
+                                    </Form.Label>
+                                    <Form.Control  defaultValue="suitcase" />
+                                </Form.Group>
+                            </Form>
                         </Container>
                     </Container>
-                </Container>
+                    <Container className={ classes.blockContainer}>
+                        <Container >
+                            <h3>Results</h3>
+                        </Container>
+                        <Container >
+                            <ListGroup>
+                                <ListGroupItem>
+                                    Video 0: 0:31-0:36
+                                </ListGroupItem>
+                                <ListGroupItem>
+                                    Video 1: 3:22-3:27
+                                </ListGroupItem>
+                                <ListGroupItem>
+                                    Video 2: 4:52-4:57
+                                </ListGroupItem>
+                            </ListGroup>
+
+                        </Container>
+                    </Container>
             </Col>
         </Row>
         </>
