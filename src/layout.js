@@ -1,8 +1,9 @@
 import {Container, ListGroup, ListGroupItem, Button, Row, Col, Navbar, Nav, Form, FormGroup} from "react-bootstrap";
 import Progress from "./progress";
 import React, { useState} from "react";
-import { FaTrash, FaImage, FaVideo } from 'react-icons/fa';
+import { FaTrash, FaImage, FaVideo, FaCamera } from 'react-icons/fa';
 import axios from "axios";
+import VideoPlayer from "./videoPlayer";
 
 //TODO: split this huge component into multiple components
 export default function Layout(){
@@ -17,7 +18,9 @@ export default function Layout(){
     let [imageID,setImageID]=useState(0);
     let [videoID,setVideoID]=useState(0);
     const [running, setRunning]=useState(false);
-    const [selectedVideo, setSelectedVideo] = useState([-1,null]);
+    const [selectedVideo, setSelectedVideo] = useState([-1,"start"]);
+    const [results,setResults]=useState([]);
+    //keys{id:0, name:"IMG_172.mp4", duration:[12,13],blob:request.data.blob()}
     const handleVideoChange = (event) => {
         const files = event.target.files;
         console.log(event);
@@ -94,6 +97,7 @@ export default function Layout(){
         formData.append('num_images',imageObjects.length.toString())
         formData.append('num_videos',videoObjects.length.toString())
         setRunning(true)
+        let res=null;
         axios.post('http://localhost:5000/upload', formData,{
             headers: {
                 'content-type': 'multipart/form-data'
@@ -101,15 +105,30 @@ export default function Layout(){
         })
             .then((response) => {
                 console.log(response.data)
-                setRunning(false);
+                res=response
+                const blobs=[];
+                for(let i=0;i<res.data.length;i++){
+                    const [name,time]=res.data[i]
+                    blobs.push([videoID+i,name,time])
+                }
+                setVideoID(videoID+res.data.length)
+                setResults(blobs)
+                console.log(blobs)
             })
+
             .catch((error) => {
+                console.log("Error caught")
+                console.log(error)
                 // Handle upload error
                 setRunning(false);
             });
+
     };
 
+
     const handleVideoSelect = (e,id,video) => {
+        console.log("Setting video state")
+        console.log(video)
         setSelectedVideo([id,video]);
     };
 
@@ -183,7 +202,7 @@ export default function Layout(){
                                     //TODO: urgent: indexing is wrong when deleted
                                     // we should use a map instead
                                     <Container key={vid} className={vid===selectedVideo[0]?classes.fileListItemSelected:classes.fileListItem} >
-                                        <Row  onClick={(e) => handleVideoSelect(e,vid,videoObj)}>
+                                        <Row  onClick={(e) => handleVideoSelect(e,vid,URL.createObjectURL(videoObj))}>
                                             <Col xs={1}>
                                                     <FaVideo height={'25px'}></FaVideo>
 
@@ -216,16 +235,17 @@ export default function Layout(){
                     <h4>Video Player</h4>
                     <Container  style={{ minHeight:"50vh"}}>
                         {/*Must have key element in video: https://stackoverflow.com/questions/23192565/video-embedded-into-html-doesnt-play*/}
-                        {selectedVideo[1] && (
-                            <video controls key={selectedVideo[0]} width={"100%"} >
-                                <source src={URL.createObjectURL(selectedVideo[1])} />
-                            </video>
+                        {selectedVideo[1]!=='start' && (
+                            <VideoPlayer props={selectedVideo}>
+
+                            </VideoPlayer>
                         )}
                     </Container>
 
                 </Container>
                 <Container className={classes.blockContainer} style={{ minHeight:"20vh"}}>
                     Airport Floor Plan
+
                 </Container>
 
             </Col>
@@ -257,25 +277,43 @@ export default function Layout(){
                             </Form>
                         </Container>
                     </Container>
-                    <Container className={ classes.blockContainer}>
-                        <Container >
-                            <h3>Results</h3>
-                        </Container>
-                        <Container >
-                            <ListGroup>
-                                <ListGroupItem>
-                                    Video 0: 0:31-0:36
-                                </ListGroupItem>
-                                <ListGroupItem>
-                                    Video 1: 3:22-3:27
-                                </ListGroupItem>
-                                <ListGroupItem>
-                                    Video 2: 4:52-4:57
-                                </ListGroupItem>
-                            </ListGroup>
+                <Container className={classes.blockContainer}>
 
-                        </Container>
+                    <h4>Results</h4>
+                    <Container>
+                        {results.length > 0 && (
+                            <Col>
+                                {
+
+                                    results.map(([id,vidName,duration], index) => (
+                                    //TODO: urgent: indexing is wrong when deleted
+                                    // we should use a map instead
+                                    <Container key={id} onClick={(e,id)=>{handleVideoSelect(e,id,`http://localhost:5000/results/${vidName}`)}}>
+                                        <Row >
+                                            <Col xs={1}>
+                                                <FaVideo height={'25px'}></FaVideo>
+
+                                            </Col>
+                                            <Col xs={4} >
+                                                {vidName}
+                                            </Col>
+
+                                            <Col xs={4}>
+
+                                                {duration.length>0?`${duration[0]}-${duration[1]}`:"None found"}
+
+                                            </Col>
+                                        </Row>
+                                    </Container>
+
+
+                                ))}
+                            </Col>
+                        )}
+
+
                     </Container>
+                </Container>
             </Col>
         </Row>
         </>
