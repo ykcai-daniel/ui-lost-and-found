@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
-import {ProgressBar} from "react-bootstrap";
+import {Col, Container, ProgressBar, Row} from "react-bootstrap";
+import axios from "axios";
 
 
 function ProgressPoller({ url }) {
@@ -19,10 +20,8 @@ function ProgressPoller({ url }) {
                 })
                 .catch((error) => {
                     console.log(error.message)
-                    clearInterval(intervalId);
-                    setProgress(40);
                 });
-        }, 3000);
+        }, 1000);
 
         return () => clearInterval(intervalId);
     }, [url]);
@@ -34,4 +33,40 @@ function ProgressPoller({ url }) {
     );
 }
 
-export default ProgressPoller;
+export function ProgressBars(props){
+
+    const [progress,setProgress]=useState(props.file_names.map((_)=>0))
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+            axios.get("http://localhost:5000/progress")
+                .then((response) => response.data)
+                .then((data) => {
+                    console.log("Json progress")
+                    console.log(data)
+                    setProgress(data)
+                })
+                .catch((error) => {
+                    console.log(error.message)
+                });
+        }, 1000);
+
+        return () => clearInterval(intervalId);
+    }, props.file_names);
+    return(
+        props.file_names.map((file_name,index)=>{
+            return (
+                <Container>
+
+                            <p>{file_name}</p>
+
+                            <ProgressBar style={{width:"100%"}} now={progress[index]}>
+
+                            </ProgressBar>
+
+
+
+                </Container>
+            )
+        })
+    )
+}
