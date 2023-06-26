@@ -35,31 +35,15 @@ function ProgressPoller({ url }) {
 
 export function ProgressBars(props){
 
-    const [progress,setProgress]=useState(props.file_names.map((_)=>0))
-    useEffect(() => {
-        const intervalId = setInterval(() => {
-            axios.get("http://localhost:5000/progress")
-                .then((response) => response.data)
-                .then((data) => {
-                    console.log("Json progress")
-                    console.log(data)
-                    setProgress(data)
-                })
-                .catch((error) => {
-                    console.log(error.message)
-                });
-        }, 1000);
 
-        return () => clearInterval(intervalId);
-    }, props.file_names);
     return(
-        props.file_names.map((file_name,index)=>{
+        props.progress.map((prog,index)=>{
             return (
-                <Container>
+                <Container key={props.file_names[index]}>
 
-                            <p>{file_name}</p>
+                            <p>{props.file_names[index]}</p>
 
-                            <ProgressBar style={{width:"100%"}} now={progress[index]}>
+                            <ProgressBar style={{width:"100%"}} now={prog}>
 
                             </ProgressBar>
 

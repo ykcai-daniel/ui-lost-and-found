@@ -1,14 +1,19 @@
-import {Container, ListGroup, ListGroupItem, Button, Row, Col, Navbar, Nav, Form, FormGroup} from "react-bootstrap";
+import {Container, Button, Row, Col, Navbar, Form,Modal} from "react-bootstrap";
 import  {ProgressBars} from "./progress";
-import React, { useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import { FaTrash, FaImage, FaVideo, FaCamera } from 'react-icons/fa';
 import axios from "axios";
 import VideoPlayer from "./videoPlayer";
+import Webcam from "react-webcam";
 
-//TODO: webcam
+
 //TODO: floor plan
-//TODO: multiple progress bar
 //TODO: decompose this huge component to smaller elements; clean up states
+
+
+//IMPORTANT: There will be undefined behaviour when the backend is accessed from multiple clients simultaneously.
+//This will be fixed later with session control. However, it is not necessary for demo purpose.
+//Please only open one tab
 export default function Layout(){
     //bootstrap formats
     const classes={
@@ -38,7 +43,16 @@ export default function Layout(){
     //array: of arrays [0, "__RESULT__IMG_1752.mp4", [12,13]]
     //format, imageid, image name in backend, duration in frames
     const [results,setResults]=useState([]);
+
     const [execVidName,setExecVidName]=useState([]);
+
+    //display the camera for photo taking
+    const [cam,setCam]=useState(false);
+    const camRef=useRef(null);
+    const [captureID,setCaptureID]=useState(0);
+    const handleClose = () => setCam(false);
+    //store the File object of the captured image
+    const [capture,setCapture]=useState(null);
     const handleVideoChange = (event) => {
         const files = event.target.files;
         console.log(event);
@@ -65,6 +79,7 @@ export default function Layout(){
             }
             newState.push([id,file]);
         }
+        setSelectedVideo([-1,null])
         setVideoObjects(newState)
     };
     const handleImageChange = (event) => {
@@ -130,7 +145,11 @@ export default function Layout(){
             }
         })
             .then((response) => {
+                //manually set all progress to 100 once response is received
+
+                console.log("Backend Response:")
                 console.log(response.data)
+                setProgress(progress.map(_=>100))
                 res=response
                 const blobs=[];
                 for(let i=0;i<res.data.length;i++){
@@ -160,33 +179,144 @@ export default function Layout(){
         setSelectedVideo([id,video]);
     };
 
+
     const handleClear=(e)=>{
+        setResults([]);
+        setSelectedVideo([-1,"start"])
         setVideoObjects([])
         setImageObjects([])
-        setSelectedVideo([-1,"start"])
-        setResults([])
         setExecVidName([])
 
     }
+
+    const [progress,setProgress]=useState([])
+
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+            axios.get("http://localhost:5000/progress")
+                .then((response) => response.data)
+                .then((data) => {
+                    setProgress(data)
+                })
+                .catch((error) => {
+                    console.log(error.message)
+                });
+        }, 1000);
+
+        return () => clearInterval(intervalId);
+    },[setProgress]);
 
     //the page
     return (
         <>
             <Navbar bg="primary" variant="dark"  className="p-2">
                 <Navbar.Brand style={{fontSize:"2rem"}}>Lost and Found</Navbar.Brand>
-                <Button onClick={handleClear} disabled={running}>Clear</Button>
             </Navbar>
-        <Row  >
+            {/*webcam popup component*/}
+            <Modal show={cam}  onHide={handleClose} size={'xl'}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Take a photo</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Row>
+                        <Col>
+                            <Container className={classes.blockContainer}>
+
+                                <Webcam
+                                    audio={false}
+                                    videoConstraints={{
+                                        width: 1280,
+                                        height: 720,
+                                        facingMode: "user"
+                                    }}
+                                    screenshotFormat="image/jpeg"
+                                    width={"100%"}
+                                    ref={camRef}
+                                >
+                                </Webcam>
+                            </Container>
+                        </Col>
+                        <Col>
+                            {capture!==null && (
+                                <Container className={classes.blockContainer}>
+                                    <img alt={"Loading"} src={URL.createObjectURL(capture)}>
+                                    </img>
+                                </Container>
+                            )}
+                        </Col>
+                    </Row>
+                </Modal.Body>
+
+                <Modal.Footer>
+                    <Button onClick={( ) => {
+
+
+                        const imageSrc = camRef.current.getScreenshot();
+                        const byteCharacters = atob(imageSrc.split(',')[1]);
+                        const byteNumbers = new Array(byteCharacters.length);
+                        for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                        const byteArray = new Uint8Array(byteNumbers);
+                        const blob = new Blob([byteArray], { type: 'image/jpeg' });
+                        const file = new File([blob], `capture-${captureID}.jpg`, { type: 'image/jpeg' });
+                        setCaptureID(captureID+1)
+                        console.log(file);
+                        setCapture(file);
+                    }}>
+                    Capture
+                    </Button>
+                    <Button variant="primary" onClick={()=>{
+                        const tmpImages=[];
+                        for(let i=0;i<imageObjects.length;i++){
+                            tmpImages.push(imageObjects[i])
+                        }
+                        tmpImages.push([imageID,capture])
+                        setImageID(imageID+1)
+                        console.log("New images:")
+                        console.log(tmpImages)
+                        setImageObjects(tmpImages)
+                        setCapture(null)
+                        handleClose()
+                    }}
+                            disabled={capture==null}
+                    >
+                        Save Image
+                    </Button>
+                    <Button variant="secondary" onClick={handleClose}>
+                        Close
+                    </Button>
+                </Modal.Footer>
+
+            </Modal>
+        <Row>
             <Col xs={3}>
                 <Container className={ classes.blockContainer}>
                     <Container >
                         <Row>
-                            <Form.Group controlId="formFile" >
-                                <Form.Label><h4>Upload Images</h4></Form.Label>
-                                <Form.Control disabled={running} type="file" multiple  variant="primary"  onChange={handleImageChange} />
+                            <Col xs={10}>
+                                <h4>Upload Image</h4>
+                            </Col>
+                            <Col xs={2}>
+                                <Container onClick={
+                                    ()=>{setCam(true)}
+                                }><FaCamera></FaCamera></Container>
+                            </Col>
+                        </Row>
+                        <Container className={classes.blockContainer}>
+                            <Form.Group key={imageID} controlId="formFile" >
+                                {/*onClick allows uploading two identical images*/}
+                                <Form.Control disabled={running} type="file" multiple  variant="primary" onClick={(e)=> {e.target.value = null}} onChange={handleImageChange} />
                             </Form.Group>
 
-                        </Row>
+                        </Container>
+
+
+
+
+
+
+
 
                     </Container>
                     <Container className={classes.blockContainer} >
@@ -226,9 +356,9 @@ export default function Layout(){
 
                     <Container >
                         <Row>
-                            <Form.Group controlId="formFile" className="mb-3">
+                            <Form.Group key={videoID}  controlId="formFile" className="mb-3">
                                 <Form.Label><h4>Upload Videos</h4></Form.Label>
-                                <Form.Control type="file" multiple  variant="primary"  onChange={handleVideoChange} disabled={running} />
+                                <Form.Control type="file" multiple  variant="primary" onClick={(e)=> {e.target.value = null}}  onChange={handleVideoChange} disabled={running} />
                             </Form.Group>
 
                         </Row>
@@ -239,12 +369,12 @@ export default function Layout(){
                             <Col>
                                 {videoObjects.map(([vid,videoObj], index) => (
                                     <Container key={vid} className={vid===selectedVideo[0]?classes.fileListItemSelected:classes.fileListItem} >
-                                        <Row  onClick={(e) => handleVideoSelect(e,vid,URL.createObjectURL(videoObj))}>
+                                        <Row  >
                                             <Col xs={1}>
                                                     <FaVideo height={'25px'}></FaVideo>
 
                                             </Col>
-                                            <Col xs={8} >
+                                            <Col xs={8}  onClick={(e) => handleVideoSelect(e,vid,URL.createObjectURL(videoObj))}>
                                                 {videoObj.name}
                                             </Col>
 
@@ -266,13 +396,14 @@ export default function Layout(){
 
                     </Container>
                 </Container>
+
             </Col>
             <Col xs={5}>
                 <Container className={classes.blockContainer}>
                     <h4>Video Player</h4>
                     <Container  style={{ minHeight:"50vh"}}>
                         {/*Must have key element in video: https://stackoverflow.com/questions/23192565/video-embedded-into-html-doesnt-play*/}
-                        {selectedVideo[1]!=='start' && (
+                        {selectedVideo[1]!=='start'&&selectedVideo[1]!==null && (
                             <VideoPlayer props={selectedVideo}>
 
                             </VideoPlayer>
@@ -291,7 +422,7 @@ export default function Layout(){
                     <Container className={classes.blockContainer} >
                         <Row className={'gx-1'}>
                             <Col xs={7}><Button className={"btn btn-success "} style={{width:'100%',height:"10vh"}} onClick={handleUploadClick} disabled={running}>Launch</Button></Col>
-                            <Col xs={5}><Button className={"btn btn-danger "} style={{width:'100%',height:"10vh"}} disabled={!running}>Cancel</Button></Col>
+                            <Col xs={5}><Button className={"btn btn-danger "} style={{width:'100%',height:"10vh"}} disabled={running} onClick={handleClear}>Clear</Button></Col>
                         </Row>
                     </Container>
 
@@ -315,7 +446,7 @@ export default function Layout(){
                     {execVidName.length>0 && (
                         <Container className={classes.blockContainer}>
                         <h4>Progress</h4>
-                        <ProgressBars file_names={execVidName}></ProgressBars>
+                        <ProgressBars progress={progress} file_names={execVidName}></ProgressBars>
                         </Container>)
                     }
 
@@ -324,12 +455,13 @@ export default function Layout(){
                     <h4>Results</h4>
                     <Container>
                         {results.length > 0 && (
+
                             <Col>
                                 {
 
                                     results.map(([id,vidName,duration], index) => (
                                     <Container key={id} onClick={(e,id)=>{handleVideoSelect(e,id,`http://localhost:5000/results/${vidName}`)}} className={'mx-0 px-0 bg-light-subtle'}>
-                                        <Row >
+                                        <Row className={'gx-0'}>
                                             <Col xs={1}>
                                                 <FaVideo height={'25px'}></FaVideo>
 
@@ -339,9 +471,7 @@ export default function Layout(){
                                             </Col>
 
                                             <Col xs={5} >
-                                                <p className={"text-right"}>{duration.length>0?`${duration[0]}-${duration[1]}`:"None found"}</p>
-
-
+                                                <p className={"text-right"}>{duration!==undefined && duration.length>1?`${duration[0]}-${duration[1]}`:"None found"}</p>
 
                                             </Col>
                                         </Row>
@@ -358,5 +488,6 @@ export default function Layout(){
             </Col>
         </Row>
         </>
+
     )
 }
