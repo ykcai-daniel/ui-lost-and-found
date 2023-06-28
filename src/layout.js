@@ -444,7 +444,7 @@ export default function Layout(){
                         {
                             cameraInfo.map((info,index)=>{
                                 return (
-                                    <div key={index} style={info.style}><Row className={"gx-1"}><Col><FaVideo></FaVideo></Col><Col> <Form.Check></Form.Check></Col></Row></div>
+                                    <div key={index}  style={info.style}><Row className={"gx-1"}><Col><FaVideo className={styles.imagebox} ></FaVideo></Col><Col>{index}</Col><Col> <Form.Check></Form.Check></Col></Row></div>
                                 )})
                         }
                     </div>
