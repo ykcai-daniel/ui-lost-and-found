@@ -1,0 +1,8 @@
+.imagebox {
+    width: 200px;
+    transition: transform 0.2s ease-in-out;
+}
+
+.imagebox:hover {
+    transform: scale(1.2);
+}

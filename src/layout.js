@@ -5,7 +5,8 @@ import { FaTrash, FaImage, FaVideo, FaCamera } from 'react-icons/fa';
 import axios from "axios";
 import VideoPlayer from "./videoPlayer";
 import Webcam from "react-webcam";
-
+import backgroundImage from './map.png';
+import styles from './style.module.css'
 
 //TODO: floor plan
 //TODO: decompose this huge component to smaller elements; clean up states
@@ -189,8 +190,32 @@ export default function Layout(){
 
     }
 
+    const appendVideo=(e,url)=>{
+        const currentVideos=[];
+        for(let i=0;i<videoObjects.length;i++){
+            currentVideos.push([videoObjects[i]]);
+        }
+        currentVideos.push([videoID,url])
+        setVideoID(videoID+1)
+        setVideoObjects(currentVideos)
+    }
+
+
+
+
     const [progress,setProgress]=useState([])
 
+
+    const cameraInfo=[
+        {style:{position:"absolute",top:"10%",left:"20%",} ,url:""},
+        {style:{position:"absolute",top:"25%",left:"30%",} ,url:""},
+        {style:{position:"absolute",top:"45%",left:"40%",} ,url:""},
+        {style:{position:"absolute",top:"60%",left:"30%",} ,url:""},
+        {style:{position:"absolute",top:"75%",left:"20%",} ,url:""},
+        {style:{position:"absolute",top:"45%",left:"65%",} ,url:""},
+        {style:{position:"absolute",top:"45%",left:"85%",} ,url:""},
+    ]
+    const [checked,setChecked]=useState(cameraInfo.map(_=>false))
     useEffect(() => {
         const intervalId = setInterval(() => {
             axios.get("http://localhost:5000/progress")
@@ -401,7 +426,7 @@ export default function Layout(){
             <Col xs={5}>
                 <Container className={classes.blockContainer}>
                     <h4>Video Player</h4>
-                    <Container  style={{ minHeight:"50vh"}}>
+                    <Container  style={{ minHeight:"30vh"}}>
                         {/*Must have key element in video: https://stackoverflow.com/questions/23192565/video-embedded-into-html-doesnt-play*/}
                         {selectedVideo[1]!=='start'&&selectedVideo[1]!==null && (
                             <VideoPlayer props={selectedVideo}>
@@ -412,9 +437,20 @@ export default function Layout(){
 
                 </Container>
                 <Container className={classes.blockContainer} style={{ minHeight:"20vh"}}>
-                    Airport Floor Plan
-
+                    <h4>Floor Plan</h4>
+                    <div style={{position:'relative'}}>
+                        <img style={{width:'100%'}} src={backgroundImage} alt={"Cannot show"}>
+                        </img>
+                        {
+                            cameraInfo.map((info,index)=>{
+                                return (
+                                    <div key={index} style={info.style}><Row className={"gx-1"}><Col><FaVideo></FaVideo></Col><Col> <Form.Check></Form.Check></Col></Row></div>
+                                )})
+                        }
+                    </div>
                 </Container>
+
+
 
             </Col>
             <Col xs={3}>
