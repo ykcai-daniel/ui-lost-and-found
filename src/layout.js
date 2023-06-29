@@ -215,7 +215,6 @@ export default function Layout(){
         {style:{position:"absolute",top:"45%",left:"65%",} ,url:""},
         {style:{position:"absolute",top:"45%",left:"85%",} ,url:""},
     ]
-    const [checked,setChecked]=useState(cameraInfo.map(_=>false))
     useEffect(() => {
         const intervalId = setInterval(() => {
             axios.get("http://localhost:5000/progress")
@@ -316,7 +315,7 @@ export default function Layout(){
             </Modal>
         <Row>
             <Col xs={3}>
-                <Container className={ classes.blockContainer}>
+                <Container className={[styles.containerboxhover,classes.blockContainer].join(" ")}>
                     <Container >
                         <Row>
                             <Col xs={10}>
@@ -325,7 +324,7 @@ export default function Layout(){
                             <Col xs={2}>
                                 <Container onClick={
                                     ()=>{setCam(true)}
-                                }><FaCamera></FaCamera></Container>
+                                }><FaCamera className={styles.hoverbox15}></FaCamera></Container>
                             </Col>
                         </Row>
                         <Container className={classes.blockContainer}>
@@ -336,20 +335,13 @@ export default function Layout(){
 
                         </Container>
 
-
-
-
-
-
-
-
                     </Container>
-                    <Container className={classes.blockContainer} >
+                    <Container className={classes.blockContainer}  >
                         {imageObjects.length > 0 && (
                             <Col>
                                 {imageObjects.map(([iid,imageObj]) => (
 
-                                        <Container className={ classes.fileListItem} >
+                                        <Container className={[styles.listitemhover,classes.fileListItem].join(" ")} >
                                             <Row key={iid}>
                                             <Col xs={1}>
 
@@ -377,6 +369,8 @@ export default function Layout(){
 
                     </Container>
                 </Container>
+
+
                 <Container className={classes.blockContainer}>
 
                     <Container >
@@ -393,7 +387,7 @@ export default function Layout(){
                         {videoObjects.length > 0 && (
                             <Col>
                                 {videoObjects.map(([vid,videoObj], index) => (
-                                    <Container key={vid} className={vid===selectedVideo[0]?classes.fileListItemSelected:classes.fileListItem} >
+                                    <Container key={vid} className={[vid===selectedVideo[0]?classes.fileListItemSelected:classes.fileListItem,styles.listitemhover].join(" ")} >
                                         <Row  >
                                             <Col xs={1}>
                                                     <FaVideo height={'25px'}></FaVideo>
@@ -444,7 +438,7 @@ export default function Layout(){
                         {
                             cameraInfo.map((info,index)=>{
                                 return (
-                                    <div key={index}  style={info.style}><Row className={"gx-1"}><Col><FaVideo className={styles.imagebox} ></FaVideo></Col><Col>{index}</Col><Col> <Form.Check></Form.Check></Col></Row></div>
+                                    <div key={index}  style={info.style}><Row className={"gx-1"}><Col><FaVideo className={styles.hoverbox15} ></FaVideo></Col><Col>{index}</Col><Col> <Form.Check></Form.Check></Col></Row></div>
                                 )})
                         }
                     </div>
@@ -496,7 +490,7 @@ export default function Layout(){
                                 {
 
                                     results.map(([id,vidName,duration], index) => (
-                                    <Container key={id} onClick={(e,id)=>{handleVideoSelect(e,id,`http://localhost:5000/results/${vidName}`)}} className={'mx-0 px-0 bg-light-subtle'}>
+                                    <Container key={id} onClick={(e,id)=>{handleVideoSelect(e,id,`http://localhost:5000/results/${vidName}`)}} className={[classes.fileListItem,styles.containerboxhover].join(" ")}>
                                         <Row className={'gx-0'}>
                                             <Col xs={1}>
                                                 <FaVideo height={'25px'}></FaVideo>

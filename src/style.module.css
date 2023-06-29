@@ -1,7 +1,23 @@
-.imagebox {
+.hoverbox15 {
     transition: transform 0.2s ease-in-out;
 }
 
-.imagebox:hover {
+.listitemhover{
+    transition: transform 0.2s ease-in-out;
+}
+
+.containerboxhover{
+
+}
+
+.hoverbox15:hover {
     transform: scale(1.5);
+}
+
+.listitemhover:hover {
+
+    filter: brightness(95%);
+}
+
+.containerboxhover:hover{
 }
