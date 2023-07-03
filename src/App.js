@@ -344,12 +344,12 @@ export default function Layout(){
                         </Container>
                         <Container className={classes.blockContainer}  >
                             {imageObjects.length > 0 && (
-                                <Row>
+                                <Row className={'g-0'}>
                                     {imageObjects.map(([iid,imageObj]) => (
 
-                                                <Col xs={4} key={iid}>
+                                                <Col xs={4} key={iid} >
 
-                                                    <CropImage src={URL.createObjectURL(imageObj) } squareSize={100}> </CropImage>
+                                                    <CropImage src={URL.createObjectURL(imageObj) } squareSize={120} name={imageObj.name}> </CropImage>
 
 
                                                 </Col>

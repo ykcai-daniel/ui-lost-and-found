@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-
-function CropImage({ src, squareSize }) {
+import styles from "./style.module.css"
+function CropImage({ src, squareSize,name }) {
     const canvasRef = useRef(null);
 
     useEffect(() => {
@@ -34,10 +34,10 @@ function CropImage({ src, squareSize }) {
     }, [src, squareSize]);
 
     return (
-        <div className="image-hover-container">
+        <div className={styles['image-hover-container']}>
             <canvas ref={canvasRef} />
-            <div className="image-hover-overlay">
-                <div className="image-hover-text">{"demo text"}</div>
+            <div className={styles['image-hover-overlay']}>
+                <div className={styles['image-hover-text']}>{name}</div>
             </div>
         </div>
 
