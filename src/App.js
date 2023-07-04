@@ -223,6 +223,9 @@ export default function Layout(){
     ]
     useEffect(() => {
         const intervalId = setInterval(() => {
+            if(execVidName.length===0){
+                return;
+            }
             axios.get("http://localhost:5000/progress")
                 .then((response) => response.data)
                 .then((data) => {
@@ -239,8 +242,8 @@ export default function Layout(){
     //the page
     return (
         <>
-            <Navbar bg="primary" variant="dark"  className="p-2">
-                <Navbar.Brand style={{fontSize:"2rem"}}>Lost and Found</Navbar.Brand>
+            <Navbar bg="primary" variant="dark"  className="p-3">
+                <Navbar.Brand style={{fontSize:"1.5rem"}}>Lost and Found</Navbar.Brand>
             </Navbar>
             {/*webcam popup component*/}
             <Modal show={cam}  onHide={handleClose} size={'xl'}>
@@ -336,7 +339,7 @@ export default function Layout(){
                             <Container className={classes.blockContainer}>
                                 <Form.Group key={imageID} controlId="formFile" >
                                     {/*onClick allows uploading two identical images*/}
-                                    <Form.Control disabled={running} type="file" multiple  variant="primary" onClick={(e)=> {e.target.value = null}} onChange={handleImageChange} />
+                                    <Form.Control  accept={"image/*"} disabled={running} type="file" multiple  variant="primary" onClick={(e)=> {e.target.value = null}} onChange={handleImageChange} />
                                 </Form.Group>
 
                             </Container>
@@ -372,7 +375,7 @@ export default function Layout(){
                             <Row>
                                 <Form.Group key={videoID}  controlId="formFile" className="mb-3">
                                     <Form.Label><h4>Upload Videos</h4></Form.Label>
-                                    <Form.Control type="file" multiple  variant="primary" onClick={(e)=> {e.target.value = null}}  onChange={handleVideoChange} disabled={running} />
+                                    <Form.Control accept={"video/*"} type="file" multiple  variant="primary" onClick={(e)=> {e.target.value = null}}  onChange={handleVideoChange} disabled={running} />
                                 </Form.Group>
 
                             </Row>
@@ -380,31 +383,14 @@ export default function Layout(){
                         </Container>
                         <Container>
                             {videoObjects.length > 0 && (
-                                <Col>
+                                <Row>
                                     {videoObjects.map(([vid,videoObj], index) => (
-                                        <Container key={vid} className={[vid===selectedVideo[0]?classes.fileListItemSelected:classes.fileListItem,styles.listitemhover].join(" ")} >
-                                            <Row  >
-                                                <Col xs={1}>
-                                                    <FaVideo height={'25px'}></FaVideo>
-
+                                                <Col xs={6}>
+                                                    <CropImage src={`http://localhost:5000/thumbnails/${videoObj.name}`} squareSize={200} name={videoObj.name}></CropImage>
                                                 </Col>
-                                                <Col xs={8}  onClick={(e) => handleVideoSelect(e,vid,URL.createObjectURL(videoObj))}>
-                                                    {videoObj.name}
-                                                </Col>
-
-                                                <Col xs={2}>
-
-                                                    <Button  onClick={() => handleVideoDelete(vid)} >
-                                                        <FaTrash></FaTrash>
-                                                    </Button>
-
-                                                </Col>
-                                            </Row>
-                                        </Container>
-
 
                                     ))}
-                                </Col>
+                                </Row>
                             )}
 
 
@@ -496,7 +482,7 @@ export default function Layout(){
                     {execVidName.length>0 && (
                         <Container className={classes.blockContainer}>
                             <h4>Progress</h4>
-                            {/*<ProgressBars progress={progress} file_names={execVidName}></ProgressBars>*/}
+                            <ProgressBars progress={progress} file_names={execVidName}></ProgressBars>
                         </Container>)
                     }
 
@@ -513,7 +499,7 @@ export default function Layout(){
                                             <Container key={id} onClick={(e,id)=>{handleVideoSelect(e,id,`http://localhost:5000/results/${vidName}`)}} className={[classes.fileListItem,styles.containerboxhover].join(" ")}>
                                                 <Row className={'gx-0'}>
                                                     <Col xs={1}>
-                                                        <FaVideo height={'25px'}></FaVideo>
+                                                        <FaVideo></FaVideo>
 
                                                     </Col>
                                                     <Col xs={6} >

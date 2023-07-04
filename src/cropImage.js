@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import styles from "./style.module.css"
-function CropImage({ src, squareSize,name }) {
+import {FaTrash} from "react-icons/fa";
+function CropImage({ src, squareSize=120,name }) {
     const canvasRef = useRef(null);
 
     useEffect(() => {
@@ -37,6 +38,7 @@ function CropImage({ src, squareSize,name }) {
         <div className={styles['image-hover-container']}>
             <canvas ref={canvasRef} />
             <div className={styles['image-hover-overlay']}>
+                <FaTrash></FaTrash>
                 <div className={styles['image-hover-text']}>{name}</div>
             </div>
         </div>
