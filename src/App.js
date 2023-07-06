@@ -1,22 +1,20 @@
 import {Container, Button, Row, Col, Navbar, Form,Modal} from "react-bootstrap";
 import  {ProgressBars} from "./progress";
 import React, {useEffect, useRef, useState} from "react";
-import { FaTrash, FaImage, FaVideo, FaCamera } from 'react-icons/fa';
+import { FaTrash, FaCamera } from 'react-icons/fa';
 import axios from "axios";
 import VideoPlayer from "./videoPlayer";
 import Webcam from "react-webcam";
-import backgroundImage from './map.png';
 import "leaflet/dist/leaflet.css"
 import styles from './style.module.css'
-import {ImageOverlay, MapContainer, Marker, TileLayer} from "react-leaflet";
-import {Handler} from "leaflet/src/core";
-import MarkerSelector from "./selector";
-import MyMap from "./selector";
+import MyMap from "./map";
 import CropImage from "./cropImage";
 
-//TODO: floor plan
-//TODO: decompose this huge component to smaller elements; clean up states
-
+const videoCameras = [
+    { name: 'IMG_1752.mp4', position: [22.308, 113.917] },
+    { name: 'IMG_1753.mp4', position: [22.305, 113.919] },
+    { name: 'IMG_6757.mp4', position: [22.309, 113.916] },
+];
 
 //IMPORTANT: There will be undefined behaviour when the backend is accessed from multiple clients simultaneously.
 //This will be fixed later with session control. However, it is not necessary for demo purpose.
@@ -29,7 +27,7 @@ export default function Layout(){
         blockContainer:"bg-light rounded mt-1 p-1",
     }
     //the videos to be submitted to backend
-    const [videoObjects, setVideoObjects] = useState([]);
+    const [videoNames, setVideoNames] = useState([]);
     // the images to be submitted to backend
     const [imageObjects, setImageObjects] = useState([]);
 
@@ -44,7 +42,7 @@ export default function Layout(){
     const [running, setRunning]=useState(false);
 
     //select which video should be played in the video player component
-    const [selectedVideo, setSelectedVideo] = useState([-1,"start"]);
+    const [selectedVideo, setSelectedVideo] = useState(null);
 
     //result of the backend
     //array: of arrays [0, "__RESULT__IMG_1752.mp4", [12,13]]
@@ -60,35 +58,7 @@ export default function Layout(){
     const handleClose = () => setCam(false);
     //store the File object of the captured image
     const [capture,setCapture]=useState(null);
-    const handleVideoChange = (event) => {
-        const files = event.target.files;
-        console.log(event);
-        const newFiles=[];
-        for (let i=0; i<videoObjects.length;i++){
-            newFiles.push(videoObjects[i])
-        }
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            newFiles.push([videoID,file]);
-        }
-        setVideoID(videoID+files.length);
-
-        setVideoObjects(newFiles);
-    };
-    const handleVideoDelete = (index) => {
-        console.log(`Expecting to delete video with index ${index}`)
-        const newState=[]
-        for (let i = 0; i < videoObjects.length; i++) {
-            const [id,file] = videoObjects[i];
-            if(id===index){
-                console.log(`Deleting ${videoObjects[i]}`)
-                continue
-            }
-            newState.push([id,file]);
-        }
-        setSelectedVideo([-1,null])
-        setVideoObjects(newState)
-    };
+    const [videoPlayerShow,setVideoPlayerShow]=useState(false);
     const handleImageChange = (event) => {
 
 
@@ -109,8 +79,6 @@ export default function Layout(){
 
     };
     const handleImageDelete = (idToDelete) => {
-        console.log("Before delete:")
-        console.log(imageObjects)
         const newState=[]
         for (let i = 0; i < imageObjects.length; i++) {
             const [id,file] = imageObjects[i];
@@ -133,18 +101,17 @@ export default function Layout(){
             console.log(image)
             formData.append(`image${index}`,image,image.name);
         });
-        const vidNames=[]
-        videoObjects.forEach(([id,video], index) => {
-            console.log(`Uploading video ${video.name}`)
-            console.log(video)
-            formData.append(`video${index}`,video,video.name);
-            vidNames.push(video.name)
-        });
-        formData.append('file_names',JSON.stringify(vidNames))
+        console.log(videoNames)
+        const videoNameWithoutID=[]
+        for(let i=0;i<videoNames.length;i++){
+            videoNameWithoutID.push(videoNames[i][1])
+        }
+
+        formData.append('video_names',JSON.stringify(videoNameWithoutID))
         formData.append('num_images',imageObjects.length.toString())
-        formData.append('num_videos',videoObjects.length.toString())
+        formData.append('num_videos',videoNames.length.toString())
         setRunning(true)
-        setExecVidName(vidNames)
+        setExecVidName(videoNameWithoutID)
         let res=null;
         axios.post('http://localhost:5000/upload', formData,{
             headers: {
@@ -181,54 +148,60 @@ export default function Layout(){
 
     //set image to display in image player
     const handleVideoSelect = (e,id,video) => {
-        console.log("Setting video state")
-        console.log(video)
-        setSelectedVideo([id,video]);
+        console.log(`Selecting ${video}`)
+        setSelectedVideo(video);
     };
+
+    function onIconClick(e,key,selected){
+        if(selected){
+            console.log(`removing video with key ${key}`)
+            //unselect the video
+            const newNames=[]
+            for(let i=0;i<videoNames.length;i++){
+                const [id,_]=videoNames[i]
+                if(id===key){
+                    continue;
+                }
+                newNames.push(videoNames[i])
+            }
+            setVideoNames(newNames)
+        }
+        else{
+            console.log(`Adding video with key ${key}`)
+            //select the
+            const newNames=[]
+            for(let i=0;i<videoNames.length;i++){
+                newNames.push(videoNames[i])
+            }
+            newNames.push([key,videoCameras[key].name])
+            setVideoNames(newNames)
+        }
+        console.log(videoNames)
+    }
 
 
     const handleClear=(e)=>{
         setResults([]);
-        setSelectedVideo([-1,"start"])
-        setVideoObjects([])
+        setSelectedVideo(null)
+        setVideoNames([])
         setImageObjects([])
         setExecVidName([])
 
     }
 
-    const appendVideo=(e,url)=>{
-        const currentVideos=[];
-        for(let i=0;i<videoObjects.length;i++){
-            currentVideos.push([videoObjects[i]]);
-        }
-        currentVideos.push([videoID,url])
-        setVideoID(videoID+1)
-        setVideoObjects(currentVideos)
-    }
-
-
-
-
     const [progress,setProgress]=useState([])
 
 
-    const cameraInfo=[
-        {style:{position:"absolute",top:"10%",left:"20%",} ,url:""},
-        {style:{position:"absolute",top:"25%",left:"30%",} ,url:""},
-        {style:{position:"absolute",top:"45%",left:"40%",} ,url:""},
-        {style:{position:"absolute",top:"60%",left:"30%",} ,url:""},
-        {style:{position:"absolute",top:"75%",left:"20%",} ,url:""},
-        {style:{position:"absolute",top:"45%",left:"65%",} ,url:""},
-        {style:{position:"absolute",top:"45%",left:"85%",} ,url:""},
-    ]
     useEffect(() => {
         const intervalId = setInterval(() => {
             if(execVidName.length===0){
+                console.log("Video length zero")
                 return;
             }
             axios.get("http://localhost:5000/progress")
                 .then((response) => response.data)
                 .then((data) => {
+                    console.log(data)
                     setProgress(data)
                 })
                 .catch((error) => {
@@ -237,7 +210,7 @@ export default function Layout(){
         }, 1000);
 
         return () => clearInterval(intervalId);
-    },[setProgress]);
+    },[execVidName]);
 
     //the page
     return (
@@ -245,7 +218,6 @@ export default function Layout(){
             <Navbar bg="primary" variant="dark"  className="p-3">
                 <Navbar.Brand style={{fontSize:"1.5rem"}}>Lost and Found</Navbar.Brand>
             </Navbar>
-            {/*webcam popup component*/}
             <Modal show={cam}  onHide={handleClose} size={'xl'}>
                 <Modal.Header closeButton>
                     <Modal.Title>Take a photo</Modal.Title>
@@ -322,6 +294,23 @@ export default function Layout(){
                 </Modal.Footer>
 
             </Modal>
+            <Modal show={selectedVideo!==null} onHide={e=>setSelectedVideo(null)} size={'lg'}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Video Player</Modal.Title>
+                </Modal.Header>
+
+                <Modal.Body>
+                    <Container  >
+                        {/*Must have key element in video: https://stackoverflow.com/questions/23192565/video-embedded-into-html-doesnt-play*/}
+                        {selectedVideo!==null && (
+                            <VideoPlayer name={selectedVideo}>
+
+                            </VideoPlayer>
+                        )}
+                    </Container>
+                </Modal.Body>
+
+            </Modal>
             <Row>
                 <Col xs={4}>
                     <Container className={[styles.containerboxhover,classes.blockContainer].join(" ")}>
@@ -351,10 +340,10 @@ export default function Layout(){
                                     {imageObjects.map(([iid,imageObj]) => (
 
                                                 <Col xs={4} key={iid} >
-
-                                                    <CropImage src={URL.createObjectURL(imageObj) } squareSize={120} name={imageObj.name}> </CropImage>
-
-
+                                                    <div style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',width:'90%',background:'white'}}>
+                                                        <CropImage src={URL.createObjectURL(imageObj) } squareSize={120} name={imageObj.name}> </CropImage>
+                                                        <div style={{width:'100%',display:'flex',flexDirection:'row',justifyContent:'space-around'}}> <div>{imageObj.name}</div> <div onClick={e=>handleImageDelete(iid)}><FaTrash></FaTrash></div></div>
+                                                    </div>
                                                 </Col>
 
 
@@ -372,80 +361,42 @@ export default function Layout(){
                     <Container className={classes.blockContainer}>
 
                         <Container >
-                            <Row>
-                                <Form.Group key={videoID}  controlId="formFile" className="mb-3">
-                                    <Form.Label><h4>Upload Videos</h4></Form.Label>
-                                    <Form.Control accept={"video/*"} type="file" multiple  variant="primary" onClick={(e)=> {e.target.value = null}}  onChange={handleVideoChange} disabled={running} />
-                                </Form.Group>
+                            <h4>Upload Videos</h4>
 
-                            </Row>
 
                         </Container>
                         <Container>
-                            {videoObjects.length > 0 && (
-                                <Row>
-                                    {videoObjects.map(([vid,videoObj], index) => (
-                                                <Col xs={6}>
-                                                    <CropImage src={`http://localhost:5000/thumbnails/${videoObj.name}`} squareSize={200} name={videoObj.name}></CropImage>
+                            {videoNames.length > 0 && (
+                                <Row className={"gx-0"}>
+                                    {videoNames.map(([id,name]) => (
+                                                <Col key={id} xs={6}>
+                                                    <div onClick={e=>handleVideoSelect(e,id,name)}  style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',width:'90%',background:'white'}}>
+                                                        <CropImage src={`http://localhost:5000/thumbnails/${name}`} squareSize={160} name={name}></CropImage>
+                                                        <div>
+                                                            <div>{name}</div>
+                                                        </div>
+                                                    </div>
                                                 </Col>
 
                                     ))}
                                 </Row>
                             )}
+                            {videoNames.length===0&&(<p>Please select videos from the map.</p>)}
 
 
                         </Container>
                     </Container>
 
                 </Col>
-                <Col xs={5}>
-                    <Modal show={false}>
-                        <h4>Video Player</h4>
-                        <Container  style={{ minHeight:"30vh"}}>
-                            {/*Must have key element in video: https://stackoverflow.com/questions/23192565/video-embedded-into-html-doesnt-play*/}
-                            {selectedVideo[1]!=='start'&&selectedVideo[1]!==null && (
-                                <VideoPlayer props={selectedVideo}>
+                <Col xs={4}>
 
-                                </VideoPlayer>
-                            )}
-                        </Container>
-
-                    </Modal>
                     <Container className={classes.blockContainer} style={{ minHeight:"20vh"}}>
                         <h4>Floor Plan</h4>
                         <div style={{  width: '100%' }}>
-                            {/*<MapContainer*/}
-                            {/*    maxBoundsViscosity={1.0}*/}
-                            {/*    style={{ height: '100%', width: '100%' }}*/}
-                            {/*              bounds={[*/}
-                            {/*                  [22.303, 113.913],*/}
-                            {/*                  [22.311, 113.921],*/}
-                            {/*              ]}*/}
-                            {/*              zoom={16}*/}
-                            {/*              scrollWheelZoom={true}*/}
-                            {/*>*/}
-                            {/*    <TileLayer  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />*/}
-                            {/*    <Marker position={[22.308, 113.917]} ><FaVideo></FaVideo></Marker>*/}
-                            {/*    <Marker position={[22.308, 113.917]} ><FaVideo></FaVideo></Marker>*/}
-                            {/*    <Marker position={[22.308, 113.917]} ><FaVideo></FaVideo></Marker>*/}
-                            {/*    <Marker position={[22.308, 113.917]} ><FaVideo></FaVideo></Marker>*/}
-
-                            {/*    /!* Add markers or other components here *!/*/}
-                            {/*</MapContainer>*/}
-                            <MyMap>
-
+                            <MyMap cameras={videoCameras} onIconClick={onIconClick}>
                             </MyMap>
                         </div>
-                        {/*<div style={{position:'relative'}}>*/}
-                        {/*    <img style={{width:'100%'}} src={backgroundImage} alt={"Cannot show"}>*/}
-                        {/*    </img>*/}
-                        {/*    {*/}
-                        {/*        cameraInfo.map((info,index)=>{*/}
-                        {/*            return (*/}
-                        {/*                <div key={index}  style={info.style}><Row className={"gx-1"}><Col><FaVideo className={styles.hoverbox15} ></FaVideo></Col><Col>{index}</Col><Col> <Form.Check></Form.Check></Col></Row></div>*/}
-                        {/*            )})*/}
-                        {/*    }*/}
-                        {/*</div>*/}
+
 
 
                     </Container>
@@ -453,69 +404,72 @@ export default function Layout(){
 
 
                 </Col>
-                <Col xs={3}>
+                <Col xs={4}>
 
                     <Container className={classes.blockContainer} >
                         <Row className={'gx-1'}>
-                            <Col xs={7}><Button className={"btn btn-success "} style={{width:'100%',height:"10vh"}} onClick={handleUploadClick} disabled={running}>Launch</Button></Col>
+                            <Col xs={7}><Button className={"btn btn-success "} style={{width:'100%',height:"10vh"}} onClick={handleUploadClick} disabled={running}>Search</Button></Col>
                             <Col xs={5}><Button className={"btn btn-danger "} style={{width:'100%',height:"10vh"}} disabled={running} onClick={handleClear}>Clear</Button></Col>
                         </Row>
                     </Container>
 
-                    <Container className={classes.blockContainer}>
-                        <Container >
-                            <h3>Configurations</h3>
-                        </Container>
-                        <Container >
-                            <Form>
-                                <Form.Group as={Row}  controlId="formPlaintextEmail">
-                                    <Form.Label column >
-                                        Lost Item Category
-                                    </Form.Label>
-                                    <Form.Control  defaultValue="suitcase" />
-                                </Form.Group>
-                            </Form>
-                        </Container>
-                    </Container>
+                    {/*<Container className={classes.blockContainer}>*/}
+                    {/*    <Container >*/}
+                    {/*        <h3>Configurations</h3>*/}
+                    {/*    </Container>*/}
+                    {/*    <Container >*/}
+                    {/*        <Form>*/}
+                    {/*            <Form.Group as={Row}  controlId="formPlaintextEmail">*/}
+                    {/*                <Form.Label column >*/}
+                    {/*                    Lost Item Category*/}
+                    {/*                </Form.Label>*/}
+                    {/*                <Form.Control  defaultValue="suitcase" />*/}
+                    {/*            </Form.Group>*/}
+                    {/*        </Form>*/}
+                    {/*    </Container>*/}
+                    {/*</Container>*/}
 
 
-                    {execVidName.length>0 && (
+
+                    {
+                        execVidName.length>0&& (
                         <Container className={classes.blockContainer}>
                             <h4>Progress</h4>
-                            <ProgressBars progress={progress} file_names={execVidName}></ProgressBars>
-                        </Container>)
+                            <ProgressBars  progress={progress} file_names={execVidName}></ProgressBars>
+                         </Container>
+                        )
                     }
+
 
                     <Container className={classes.blockContainer}>
 
                         <h4>Results</h4>
                         <Container>
+                            {results.length===0&&!running &&(
+                                <p>After selecting photos and videos, click "Submit" to search for lost moments.</p>
+                            )}
                             {results.length > 0 && (
 
-                                <Col>
+                                <Row>
                                     {
 
-                                        results.map(([id,vidName,duration], index) => (
-                                            <Container key={id} onClick={(e,id)=>{handleVideoSelect(e,id,`http://localhost:5000/results/${vidName}`)}} className={[classes.fileListItem,styles.containerboxhover].join(" ")}>
-                                                <Row className={'gx-0'}>
-                                                    <Col xs={1}>
-                                                        <FaVideo></FaVideo>
+                                        results.map(([id,name,duration], index) => (
 
-                                                    </Col>
-                                                    <Col xs={6} >
-                                                        <p className={"text-left"}> {vidName.substring(10)}:</p>
-                                                    </Col>
 
-                                                    <Col xs={5} >
-                                                        <p className={"text-right"}>{duration!==undefined && duration.length>1?`${duration[0]}-${duration[1]}`:"None found"}</p>
+                                            <Col key={id} xs={6}>
+                                                <div onClick={e=>handleVideoSelect(e,id,name)} style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',width:'90%',background:'white'}}>
+                                                    <CropImage src={`http://localhost:5000/thumbnails/${name}`} squareSize={160} name={name}></CropImage>
+                                                    <div>
+                                                        {/*Remove the "__RESULT__" prefix*/}
+                                                        <div>{name.substring(10)}: {duration}</div>
+                                                    </div>
+                                                </div>
+                                            </Col>
 
-                                                    </Col>
-                                                </Row>
-                                            </Container>
 
 
                                         ))}
-                                </Col>
+                                </Row>
                             )}
 
 

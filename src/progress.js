@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
 import {Col, Container, ProgressBar, Row} from "react-bootstrap";
-import axios from "axios";
 
 
 function ProgressPoller({ url }) {
@@ -33,15 +32,16 @@ function ProgressPoller({ url }) {
     );
 }
 
-export function ProgressBars(props){
+export function ProgressBars({progress,file_names}){
 
-
+    console.log(progress)
+    console.log(file_names)
     return(
-        props.progress.map((prog,index)=>{
+        progress.map((prog,index)=>{
             return (
-                <Container key={props.file_names[index]}>
+                <Container key={file_names[index]}>
 
-                            <p>{props.file_names[index]}</p>
+                            <p>{file_names[index]}</p>
 
                             <ProgressBar style={{width:"100%"}} now={prog}>
 

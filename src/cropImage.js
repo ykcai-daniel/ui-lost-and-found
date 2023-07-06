@@ -36,11 +36,7 @@ function CropImage({ src, squareSize=120,name }) {
 
     return (
         <div className={styles['image-hover-container']}>
-            <canvas ref={canvasRef} />
-            <div className={styles['image-hover-overlay']}>
-                <FaTrash></FaTrash>
-                <div className={styles['image-hover-text']}>{name}</div>
-            </div>
+            <canvas className={styles['media-box']} ref={canvasRef} />
         </div>
 
     );
